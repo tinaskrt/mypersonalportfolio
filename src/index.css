@@ -5,7 +5,7 @@
 @theme {
   --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  
+
   --color-accent: var(--accent-color);
   --color-accent-glow: var(--accent-glow);
   --color-bg-base: var(--bg-primary);
@@ -14,20 +14,37 @@
   --color-text-muted: var(--text-secondary);
   --color-border-glass: var(--border-color);
   --color-shadow-base: var(--shadow-premium);
-  
+
   --animate-float-slow: float 8s ease-in-out infinite;
   --animate-float-medium: float 6s ease-in-out infinite;
   --animate-float-fast: float 4s ease-in-out infinite;
   --animate-pulse-glow: pulse-glow 6s ease-in-out infinite;
   --animate-spin-slow: spin 20s linear infinite;
-  
+
   @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-15px) rotate(2deg); }
+
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-15px) rotate(2deg);
+    }
   }
+
   @keyframes pulse-glow {
-    0%, 100% { opacity: 0.45; filter: blur(60px); }
-    50% { opacity: 0.75; filter: blur(80px); }
+
+    0%,
+    100% {
+      opacity: 0.45;
+      filter: blur(60px);
+    }
+
+    50% {
+      opacity: 0.75;
+      filter: blur(80px);
+    }
   }
 }
 
@@ -48,8 +65,10 @@
   /* Midnight Rose (Dark Theme) */
   --bg-primary: #0B0A0D;
   --bg-surface: rgba(20, 16, 22, 0.68);
-  --text-primary: #F8F5F7;
-  --text-secondary: #B09AA5;
+  --text-primary: #FAFAFC;
+  /* 🌟 Brightened slightly for crisp readability */
+  --text-secondary: #E5B2CA;
+  /* 🌟 Adjusted to a vibrant, high-contrast theme-accurate rose plum */
   --border-color: rgba(255, 46, 147, 0.22);
   --accent-color: #FF2E93;
   --accent-glow: rgba(255, 46, 147, 0.4);
