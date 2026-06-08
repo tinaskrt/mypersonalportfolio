@@ -1,11 +1,8 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/react-swc' // or your specific framework plugin
 
+// https://vite.dev
 export default defineConfig({
-  base: '/mypersonalportfolio/',
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+  plugins: [react()],
+  base: '/mypersonalportfolio/', // 👈 ADD THIS EXACT LINE WITH YOUR REPO NAME
 })
