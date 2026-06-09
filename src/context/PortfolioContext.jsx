@@ -123,10 +123,12 @@ export const PortfolioProvider = ({ children }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [themeRippleTrigger, setThemeRippleTrigger] = useState(null);
 
+  // 🔴 REPLACE JUST THIS INITIALIZATION CHECK INSIDE YOUR EFFECT BLOCK:
   useEffect(() => {
     if (firebaseConfig && firebaseConfig.apiKey) {
       try {
         const apps = getApps();
+        // 🌟 FIXED: Correctly assign apps[0] instead of the whole array if already initialized
         const app = apps.length === 0 ? initializeApp(firebaseConfig) : apps[0];
 
         const firestoreInstance = getFirestore(app);
@@ -139,30 +141,24 @@ export const PortfolioProvider = ({ children }) => {
         const bioRef = doc(firestoreInstance, 'portfolio', 'bio');
         const projectsRef = doc(firestoreInstance, 'portfolio', 'projects');
 
-        // 🔴 REPLACE JUST THE .then SELECTION INSIDE YOUR useEffect BLOCK:
         Promise.all([getDoc(bioRef), getDoc(projectsRef)])
           .then(([bioSnap, projectsSnap]) => {
-            // Only update your profile if the cloud document actively contains fields
             if (bioSnap.exists() && Object.keys(bioSnap.data()).length > 1) {
               setBio(bioSnap.data());
             }
 
-            // Safe fallback check: ensure data() and data().list exist before assigning them
             if (projectsSnap.exists() && projectsSnap.data() && projectsSnap.data().list) {
               setProjects(projectsSnap.data().list);
             } else {
-              // If the cloud database is empty, fall back to your beautiful SEED_PROJECTS layout!
               setProjects(SEED_PROJECTS);
             }
           })
           .catch((err) => {
             console.error("Firebase database fetch failure:", err);
             setErrorMsg("Failed to synchronize active database data entries.");
-            // Prevent blank page crash on cloud network interruptions
             setProjects(SEED_PROJECTS);
           })
           .finally(() => setLoading(false));
-
 
       } catch (err) {
         console.error("Firebase runtime initial construction failure:", err);
@@ -170,6 +166,7 @@ export const PortfolioProvider = ({ children }) => {
       }
     }
   }, [firebaseConfig]);
+
 
   const toggleTheme = (e) => {
     if (e && e.clientX && e.clientY) {
