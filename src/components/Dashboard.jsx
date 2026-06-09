@@ -5,14 +5,15 @@ import { Lock, Unlock, LogOut, Plus, Edit, Trash2, ArrowUp, ArrowDown, Settings,
 export default function Dashboard({ onClose }) {
   const {
     isAdmin,
-    login,
-    logout,
+    loginAdmin,
+    logoutAdmin,
     bio,
-    saveBio,
+    updateBio,
     projects,
-    saveProjects,
-    firebaseConfig,
-    saveFirebaseConfig,
+    addProject,
+    editProject,
+    deleteProject,
+    saveCloudConfig,
     isFirebaseConnected,
     errorMsg
   } = usePortfolio();
@@ -112,35 +113,26 @@ export default function Dashboard({ onClose }) {
   // 🌟 REPLACE JUST THIS ONE FUNCTION INSIDE YOUR DASHBOARD.JSX FILE:
   const handleSaveProject = async (e) => {
     e.preventDefault();
-    if (!projectForm.title || !projectForm.category) return;
 
     const formattedTags = projectForm.tags
       ? projectForm.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
 
-    // ✅ FIX 1: Replaced Date.now() with a bulletproof randomized string identifier
-    const secureId = editingProject === 'new'
-      ? 'p_' + Math.random().toString(36).substring(2, 9)
-      : editingProject.id;
-
-    const updatedProject = {
+    const projectData = {
       ...projectForm,
-      id: secureId,
       tags: formattedTags
     };
 
-    let newProjectsList = [];
-    if (editingProject === 'new') {
-      newProjectsList = [updatedProject, ...projects];
-    } else {
-      newProjectsList = projects.map(p => p.id === editingProject.id ? updatedProject : p);
-    }
-
     try {
-      // ✅ FIX 2: Correctly mapped the context function name to 'saveProjectsList' 
-      await saveProjectsList(newProjectsList);
+      if (editingProject === 'new') {
+        await addProject(projectData);
+      } else {
+        await editProject(editingProject.id, projectData);
+      }
+
       setEditingProject(null);
     } catch (err) {
+      console.error(err);
       alert("Save transaction interrupted.");
     }
   };
@@ -150,7 +142,7 @@ export default function Dashboard({ onClose }) {
   const handleDeleteProject = (id) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
       const newProjects = projects.filter(p => p.id !== id);
-      saveProjects(newProjects);
+      projects(newProjects);
     }
   };
 
@@ -164,7 +156,7 @@ export default function Dashboard({ onClose }) {
     const temp = newProjects[index];
     newProjects[index] = newProjects[targetIndex];
     newProjects[targetIndex] = temp;
-    saveProjects(newProjects);
+    projects(newProjects);
   };
 
   // Toggle Featured status
@@ -182,7 +174,7 @@ export default function Dashboard({ onClose }) {
       }
       return p;
     });
-    saveProjects(newProjects);
+    projects(newProjects);
   };
 
   // Add/Remove tech stack elements
@@ -199,20 +191,20 @@ export default function Dashboard({ onClose }) {
       setNewAddSkill('');
     }
     setBioForm(tempBio);
-    saveBio(tempBio);
+    updateBio(tempBio);
   };
 
   const handleRemoveSkillPill = (category, index) => {
     const tempBio = { ...bioForm };
     tempBio.techStack[category].splice(index, 1);
     setBioForm(tempBio);
-    saveBio(tempBio);
+    updateBio(tempBio);
   };
 
   // Save General Bio info
   const handleSaveBioInfo = (e) => {
     e.preventDefault();
-    saveBio(bioForm);
+    updateBio(bioForm);
     alert("Profile settings updated successfully!");
   };
 
@@ -229,14 +221,14 @@ export default function Dashboard({ onClose }) {
   const handleSaveFirebaseSettings = (e) => {
     e.preventDefault();
     if (!fbConfigInput.trim()) {
-      saveFirebaseConfig(null);
+      saveCloudConfig(null);
       alert("Firebase connection cleared. Using LocalStorage mode.");
       return;
     }
 
     try {
       const parsedConfig = JSON.parse(fbConfigInput);
-      saveFirebaseConfig(parsedConfig);
+      saveCloudConfig(parsedConfig);
       alert("Firebase configuration saved! Attempting sync...");
     } catch (err) {
       alert("Invalid JSON format. Please paste a valid Firebase Configuration object.");
@@ -245,7 +237,7 @@ export default function Dashboard({ onClose }) {
 
   // Sign out handler
   const handleSignOut = () => {
-    logout();
+    logoutAdmin();
   };
 
   // Login Gate View
