@@ -63,10 +63,15 @@ export default function Dashboard({ onClose }) {
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    await login(passwordInput);
-    setPasswordInput('');
-  };
 
+    try {
+      await loginAdmin(passwordInput);
+      setPasswordInput('');
+      setErrorMsg('');
+    } catch (err) {
+      setErrorMsg('Invalid password');
+    }
+  };
   // Handle Project Form Changes
   const handleProjectFieldChange = (e) => {
     const { name, value, type, checked } = e.target;
