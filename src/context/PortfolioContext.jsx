@@ -139,16 +139,30 @@ export const PortfolioProvider = ({ children }) => {
         const bioRef = doc(firestoreInstance, 'portfolio', 'bio');
         const projectsRef = doc(firestoreInstance, 'portfolio', 'projects');
 
+        // 🔴 REPLACE JUST THE .then SELECTION INSIDE YOUR useEffect BLOCK:
         Promise.all([getDoc(bioRef), getDoc(projectsRef)])
           .then(([bioSnap, projectsSnap]) => {
-            if (bioSnap.exists()) setBio(bioSnap.data());
-            if (projectsSnap.exists()) setProjects(projectsSnap.data().list || []);
+            // Only update your profile if the cloud document actively contains fields
+            if (bioSnap.exists() && Object.keys(bioSnap.data()).length > 1) {
+              setBio(bioSnap.data());
+            }
+
+            // Safe fallback check: ensure data() and data().list exist before assigning them
+            if (projectsSnap.exists() && projectsSnap.data() && projectsSnap.data().list) {
+              setProjects(projectsSnap.data().list);
+            } else {
+              // If the cloud database is empty, fall back to your beautiful SEED_PROJECTS layout!
+              setProjects(SEED_PROJECTS);
+            }
           })
           .catch((err) => {
             console.error("Firebase database fetch failure:", err);
             setErrorMsg("Failed to synchronize active database data entries.");
+            // Prevent blank page crash on cloud network interruptions
+            setProjects(SEED_PROJECTS);
           })
           .finally(() => setLoading(false));
+
 
       } catch (err) {
         console.error("Firebase runtime initial construction failure:", err);
