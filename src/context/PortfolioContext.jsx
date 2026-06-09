@@ -5,6 +5,14 @@ import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut, onAuthStateC
 
 const PortfolioContext = createContext();
 
+const MY_FIREBASE_CREDENTIALS = {
+  apiKey: "AIzaSyDnT_-M2wCuKLF_TB-3fxgxTug11TMgC2E",
+  authDomain: "my-personal-portfolio-a2b6c.firebaseapp.com",
+  projectId: "my-personal-portfolio-a2b6c",
+  storageBucket: "my-personal-portfolio-a2b6c.firebasestorage.app",
+  messagingSenderId: "782092501017",
+  appId: "1:782092501017:web:079945d4b4a41dc2852a88"
+};
 const DEFAULT_BIO = {
   name: "Maria Cristina Florida",
   subtitle: "Aspiring Front-End Developer & UI/UX Designer",
@@ -48,7 +56,7 @@ const SEED_PROJECTS = [
     outcomes: "Successfully screened at the university film festival, receiving high praise for set design authenticity and sound design.",
     featured: true,
     tags: ["Video Production", "Historical Design", "Sound Editing", "Premiere Pro"],
-    images: [] // Will fallback to gradient dynamically
+    images: []
   },
   {
     id: "p2",
@@ -81,14 +89,11 @@ const SEED_PROJECTS = [
     images: []
   }
 ];
-
 export const PortfolioProvider = ({ children }) => {
-  // Theme state
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('maria-portfolio-theme') || 'blush-bloom';
   });
 
-  // Local state fallbacks
   const [bio, setBio] = useState(() => {
     const local = localStorage.getItem('maria-portfolio-bio');
     return local ? JSON.parse(local) : DEFAULT_BIO;
@@ -99,223 +104,161 @@ export const PortfolioProvider = ({ children }) => {
     return local ? JSON.parse(local) : SEED_PROJECTS;
   });
 
-  // Active section for header indicator
   const [activeSection, setActiveSection] = useState('home');
 
-  // Firebase Config State
   const [firebaseConfig, setFirebaseConfig] = useState(() => {
     const local = localStorage.getItem('maria-portfolio-fb-config');
-    return local ? JSON.parse(local) : null;
+    if (local) return JSON.parse(local);
+    return MY_FIREBASE_CREDENTIALS.apiKey !== "AIzaSy..." ? MY_FIREBASE_CREDENTIALS : null;
   });
 
-  // CMS login session state (stored locally or via Firebase Auth)
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('maria-portfolio-is-admin') === 'true';
   });
 
-  // Firebase Instances
   const [db, setDb] = useState(null);
   const [auth, setAuth] = useState(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  // Circular transition coordinates trigger
   const [themeRippleTrigger, setThemeRippleTrigger] = useState(null);
 
-  // Initialize Firebase dynamically if config exists
   useEffect(() => {
     if (firebaseConfig && firebaseConfig.apiKey) {
       try {
         const apps = getApps();
-        let app;
-        if (apps.length === 0) {
-          app = initializeApp(firebaseConfig);
-        } else {
-          app = apps[0];
-        }
+        const app = apps.length === 0 ? initializeApp(firebaseConfig) : apps[0];
+
         const firestoreInstance = getFirestore(app);
         const authInstance = getAuth(app);
         setDb(firestoreInstance);
         setAuth(authInstance);
         setIsFirebaseConnected(true);
 
-        // Fetch data from firestore
         setLoading(true);
         const bioRef = doc(firestoreInstance, 'portfolio', 'bio');
         const projectsRef = doc(firestoreInstance, 'portfolio', 'projects');
 
         Promise.all([getDoc(bioRef), getDoc(projectsRef)])
           .then(([bioSnap, projectsSnap]) => {
-            if (bioSnap.exists()) {
-              setBio(bioSnap.data());
-              localStorage.setItem('maria-portfolio-bio', JSON.stringify(bioSnap.data()));
-            }
-            if (projectsSnap.exists()) {
-              setProjects(projectsSnap.data().list || []);
-              localStorage.setItem('maria-portfolio-projects', JSON.stringify(projectsSnap.data().list || []));
-            }
-            setLoading(false);
+            if (bioSnap.exists()) setBio(bioSnap.data());
+            if (projectsSnap.exists()) setProjects(projectsSnap.data().list || []);
           })
           .catch((err) => {
-            console.error("Firebase read error, falling back to LocalStorage:", err);
-            setLoading(false);
-          });
+            console.error("Firebase database fetch failure:", err);
+            setErrorMsg("Failed to synchronize active database data entries.");
+          })
+          .finally(() => setLoading(false));
 
-        // Set up listener for auth change if Firebase connected
-        const unsubscribe = onAuthStateChanged(authInstance, (user) => {
-          if (user) {
-            setIsAdmin(true);
-            localStorage.setItem('maria-portfolio-is-admin', 'true');
-          } else {
-            setIsAdmin(false);
-            localStorage.setItem('maria-portfolio-is-admin', 'false');
-          }
-        });
-
-        return () => unsubscribe();
-      } catch (e) {
-        console.error("Firebase Initialization Failed:", e);
+      } catch (err) {
+        console.error("Firebase runtime initial construction failure:", err);
         setIsFirebaseConnected(false);
-        setDb(null);
-        setAuth(null);
       }
-    } else {
-      setIsFirebaseConnected(false);
-      setDb(null);
-      setAuth(null);
     }
   }, [firebaseConfig]);
 
-  // Save changes locally and trigger Firebase sync
-  const saveBio = async (newBio) => {
-    setBio(newBio);
-    localStorage.setItem('maria-portfolio-bio', JSON.stringify(newBio));
+  const toggleTheme = (e) => {
+    if (e && e.clientX && e.clientY) {
+      setThemeRippleTrigger({ x: e.clientX, y: e.clientY });
+    }
+    const nextTheme = theme === 'blush-bloom' ? 'theme-midnight-rose' : 'blush-bloom';
+    setTheme(nextTheme);
+    localStorage.setItem('maria-portfolio-theme', nextTheme);
+  };
+
+  const updateBio = async (newBioData) => {
+    setBio(newBioData);
+    localStorage.setItem('maria-portfolio-bio', JSON.stringify(newBioData));
+
     if (isFirebaseConnected && db) {
       try {
-        const bioRef = doc(db, 'portfolio', 'bio');
-        await setDoc(bioRef, newBio);
+        await setDoc(doc(db, 'portfolio', 'bio'), newBioData);
       } catch (err) {
-        console.error("Firebase sync error for bio:", err);
+        console.error("Cloud document profile save execution failure:", err);
+        throw new Error("Could not update information structure changes in cloud storage.");
       }
     }
   };
 
-  const saveProjects = async (newProjects) => {
-    setProjects(newProjects);
-    localStorage.setItem('maria-portfolio-projects', JSON.stringify(newProjects));
+  const saveProjectsList = async (updatedList) => {
+    setProjects(updatedList);
+    localStorage.setItem('maria-portfolio-projects', JSON.stringify(updatedList));
+
     if (isFirebaseConnected && db) {
       try {
-        const projectsRef = doc(db, 'portfolio', 'projects');
-        await setDoc(projectsRef, { list: newProjects });
+        await setDoc(doc(db, 'portfolio', 'projects'), { list: updatedList });
       } catch (err) {
-        console.error("Firebase sync error for projects:", err);
+        console.error("Cloud array persistence transaction failure:", err);
+        throw new Error("Target project registry list mapping rejected by host.");
       }
     }
   };
 
-  const saveFirebaseConfig = (config) => {
-    if (config) {
-      setFirebaseConfig(config);
-      localStorage.setItem('maria-portfolio-fb-config', JSON.stringify(config));
-    } else {
-      setFirebaseConfig(null);
-      localStorage.removeItem('maria-portfolio-fb-config');
-      setIsFirebaseConnected(false);
-      setDb(null);
-      setAuth(null);
-    }
+  const addProject = async (projectItem) => {
+    const freshItem = { ...projectItem, id: `p-${Date.now()}` };
+    const updated = [freshItem, ...projects];
+    await saveProjectsList(updated);
   };
 
-  // CMS Authentication
-  const login = async (password, email = '') => {
-    setErrorMsg('');
-    if (isFirebaseConnected && auth && email) {
-      try {
-        setLoading(true);
-        await signInWithEmailAndPassword(auth, email, password);
-        setIsAdmin(true);
-        localStorage.setItem('maria-portfolio-is-admin', 'true');
-        setLoading(false);
-        return true;
-      } catch (err) {
-        setLoading(false);
-        setErrorMsg(err.message);
-        return false;
-      }
-    } else {
-      // Local check
-      if (password === bio.adminPassword) {
-        setIsAdmin(true);
-        localStorage.setItem('maria-portfolio-is-admin', 'true');
-        return true;
-      } else {
-        setErrorMsg('Invalid password');
-        return false;
-      }
-    }
+  const editProject = async (id, updatedDetails) => {
+    const updated = projects.map(item => item.id === id ? { ...item, ...updatedDetails } : item);
+    await saveProjectsList(updated);
   };
 
-  const logout = async () => {
-    if (isFirebaseConnected && auth) {
-      try {
-        await fbSignOut(auth);
-      } catch (err) {
-        console.error("Sign out error:", err);
-      }
+  const deleteProject = async (id) => {
+    const updated = projects.filter(item => item.id !== id);
+    await saveProjectsList(updated);
+  };
+
+  const saveCloudConfig = (configData) => {
+    setFirebaseConfig(configData);
+    localStorage.setItem('maria-portfolio-fb-config', JSON.stringify(configData));
+  };
+
+  const loginAdmin = async (passwordInput) => {
+    if (passwordInput === bio.adminPassword) {
+      setIsAdmin(true);
+      localStorage.setItem('maria-portfolio-is-admin', 'true');
+      return true;
     }
+    throw new Error("Provided administrator authentication entry password rejected.");
+  };
+
+  const logoutAdmin = () => {
     setIsAdmin(false);
     localStorage.setItem('maria-portfolio-is-admin', 'false');
-  };
-
-  // Switch theme with fancy ripple coordinate saving
-  const selectTheme = (newTheme, clickEvent = null) => {
-    if (clickEvent) {
-      setThemeRippleTrigger({
-        x: clickEvent.clientX,
-        y: clickEvent.clientY,
-        targetTheme: newTheme
-      });
-      
-      // Delay the actual class change until ripple expands
-      setTimeout(() => {
-        setTheme(newTheme);
-        localStorage.setItem('maria-portfolio-theme', newTheme);
-      }, 500);
-
-      // Reset trigger
-      setTimeout(() => {
-        setThemeRippleTrigger(null);
-      }, 1200);
-    } else {
-      setTheme(newTheme);
-      localStorage.setItem('maria-portfolio-theme', newTheme);
-    }
+    if (auth) fbSignOut(auth).catch(console.error);
   };
 
   return (
     <PortfolioContext.Provider value={{
       theme,
-      selectTheme,
-      themeRippleTrigger,
+      toggleTheme,
       bio,
-      saveBio,
+      updateBio,
       projects,
-      saveProjects,
+      addProject,
+      editProject,
+      deleteProject,
       activeSection,
       setActiveSection,
       isAdmin,
-      login,
-      logout,
-      firebaseConfig,
-      saveFirebaseConfig,
+      loginAdmin,
+      logoutAdmin,
       isFirebaseConnected,
+      saveCloudConfig,
       loading,
-      errorMsg
+      errorMsg,
+      themeRippleTrigger,
+      setThemeRippleTrigger
     }}>
       {children}
     </PortfolioContext.Provider>
   );
 };
 
-export const usePortfolio = () => useContext(PortfolioContext);
+export const usePortfolio = () => {
+  const context = useContext(PortfolioContext);
+  if (!context) throw new Error("usePortfolio must be wrapped natively by a PortfolioProvider context container.");
+  return context;
+};
