@@ -217,11 +217,16 @@ export const PortfolioProvider = ({ children }) => {
     }
   };
 
+  // 🔴 REPLACE JUST THIS ONE FUNCTION IN YOUR FILE:
   const addProject = async (projectItem) => {
-    const freshItem = { ...projectItem, id: `p-${Date.now()}` };
+    // Generates a bulletproof random string ID that won't break on production minification
+    const randomId = Math.random().toString(36).substring(2, 9);
+    const freshItem = { ...projectItem, id: `p-${randomId}` };
+
     const updated = [freshItem, ...projects];
     await saveProjectsList(updated);
   };
+
 
   const editProject = async (id, updatedDetails) => {
     const updated = projects.map(item => item.id === id ? { ...item, ...updatedDetails } : item);
