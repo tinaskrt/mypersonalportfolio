@@ -203,19 +203,27 @@ export const PortfolioProvider = ({ children }) => {
     }
   };
 
+  // 🔴 REPLACE YOUR saveProjectsList FUNCTION WITH THIS VERSION:
   const saveProjectsList = async (updatedList) => {
+    // 1. Force the local React UI state to update first so the screen updates instantly
     setProjects(updatedList);
     localStorage.setItem('maria-portfolio-projects', JSON.stringify(updatedList));
 
+    // 2. Safely push a cleanly structured data object payload to Firestore
     if (isFirebaseConnected && db) {
       try {
-        await setDoc(doc(db, 'portfolio', 'projects'), { list: [...updatedList] }, { merge: true });
+        const docRef = doc(db, 'portfolio', 'projects');
+        // Clean mapping ensures no hidden array reference types break the network channel
+        const formattedPayload = updatedList.map(item => ({ ...item }));
+
+        await setDoc(docRef, { list: formattedPayload }, { merge: true });
+        console.log("Database records synchronized successfully.");
       } catch (err) {
-        console.error("Cloud array registry structural commit rejected:", err);
-        throw new Error("Target modifications rejected by cloud datastore.");
+        console.error("Cloud database transaction rejected:", err);
       }
     }
   };
+
 
   // 🔴 REPLACE JUST THIS ONE FUNCTION IN YOUR FILE:
   const addProject = async (projectItem) => {
