@@ -20,7 +20,7 @@ export default function Dashboard({ onClose }) {
   const [passwordInput, setPasswordInput] = useState('');
   const [activeTab, setActiveTab] = useState('projects'); // projects, content, inbox, db
   const [editingProject, setEditingProject] = useState(null); // null, 'new', or project object
-  
+
   // Project Form State
   const [projectForm, setProjectForm] = useState({
     title: '',
@@ -109,7 +109,8 @@ export default function Dashboard({ onClose }) {
   };
 
   // Save project form
-  const handleSaveProject = (e) => {
+  // 🌟 REPLACE JUST THIS ONE FUNCTION INSIDE YOUR DASHBOARD.JSX FILE:
+  const handleSaveProject = async (e) => {
     e.preventDefault();
     if (!projectForm.title || !projectForm.category) return;
 
@@ -117,22 +118,33 @@ export default function Dashboard({ onClose }) {
       ? projectForm.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
 
+    // ✅ FIX 1: Replaced Date.now() with a bulletproof randomized string identifier
+    const secureId = editingProject === 'new'
+      ? 'p_' + Math.random().toString(36).substring(2, 9)
+      : editingProject.id;
+
     const updatedProject = {
       ...projectForm,
-      id: editingProject === 'new' ? 'p_' + Date.now() : editingProject.id,
+      id: secureId,
       tags: formattedTags
     };
 
     let newProjectsList = [];
     if (editingProject === 'new') {
-      newProjectsList = [...projects, updatedProject];
+      newProjectsList = [updatedProject, ...projects];
     } else {
       newProjectsList = projects.map(p => p.id === editingProject.id ? updatedProject : p);
     }
 
-    saveProjects(newProjectsList);
-    setEditingProject(null);
+    try {
+      // ✅ FIX 2: Correctly mapped the context function name to 'saveProjectsList' 
+      await saveProjectsList(newProjectsList);
+      setEditingProject(null);
+    } catch (err) {
+      alert("Save transaction interrupted.");
+    }
   };
+
 
   // Delete project
   const handleDeleteProject = (id) => {
@@ -241,12 +253,12 @@ export default function Dashboard({ onClose }) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-        
+
         <div className="relative w-full max-w-md glass-panel rounded-3xl p-8 border border-border-glass shadow-2xl z-10 text-center animate-[zoomIn_0.25s_ease]">
           <div className="p-4 rounded-full bg-accent/15 text-accent w-fit mx-auto mb-6">
             <Lock className="w-8 h-8 animate-pulse-glow" />
           </div>
-          
+
           <h2 className="text-2xl font-black text-text-main tracking-tight mb-2">CMS Security Gate</h2>
           <p className="text-sm text-text-muted mb-6">Access credentials are required to edit portfolio content and layouts.</p>
 
@@ -291,7 +303,7 @@ export default function Dashboard({ onClose }) {
       <div className="fixed inset-0 bg-black/55 backdrop-blur-md" onClick={onClose} />
 
       <div className="relative w-full max-w-6xl h-full md:h-[90vh] glass-panel rounded-none md:rounded-3xl border border-border-glass shadow-2xl z-10 flex flex-col overflow-hidden animate-[zoomIn_0.3s_cubic-bezier(0.16,1,0.3,1)]">
-        
+
         {/* Dashboard Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-glass bg-bg-glass/80 backdrop-blur-md">
           <div className="flex items-center gap-3 text-left">
@@ -326,7 +338,7 @@ export default function Dashboard({ onClose }) {
 
         {/* Dashboard Tabs & Panel split */}
         <div className="flex-grow flex flex-col md:flex-row overflow-hidden bg-bg-base/30">
-          
+
           {/* Side Tabs navigation */}
           <nav className="w-full md:w-56 border-r border-border-glass flex flex-row md:flex-col p-3 gap-2 overflow-x-auto md:overflow-x-visible">
             <button
@@ -361,7 +373,7 @@ export default function Dashboard({ onClose }) {
 
           {/* Active Panel Viewport */}
           <div className="flex-grow overflow-y-auto p-6 md:p-8 text-left">
-            
+
             {/* TAB 1: PROJECTS */}
             {activeTab === 'projects' && !editingProject && (
               <div className="animate-[fadeIn_0.3s_ease]">
@@ -399,7 +411,7 @@ export default function Dashboard({ onClose }) {
 
                       {/* Controls Area */}
                       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
-                        
+
                         {/* Order Controls */}
                         <div className="flex items-center gap-1 border border-border-glass rounded-xl p-1 bg-bg-base/30">
                           <button
@@ -480,7 +492,7 @@ export default function Dashboard({ onClose }) {
                       className="px-4 py-3 rounded-xl bg-bg-base border border-border-glass focus:border-accent/40 focus:ring-1 focus:ring-accent outline-none text-text-main text-sm"
                     />
                   </div>
-                  
+
                   <div className="md:col-span-4 flex flex-col gap-2">
                     <label className="text-xs font-bold text-text-muted uppercase">Production Year</label>
                     <input
@@ -648,9 +660,9 @@ export default function Dashboard({ onClose }) {
             {activeTab === 'content' && (
               <div className="animate-[fadeIn_0.3s_ease]">
                 <h3 className="text-xl font-extrabold text-text-main tracking-tight mb-6">Edit Site Profiles</h3>
-                
+
                 <form onSubmit={handleSaveBioInfo} className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  
+
                   {/* Name and Tagline */}
                   <div className="md:col-span-6 flex flex-col gap-2">
                     <label className="text-xs font-bold text-text-muted uppercase">My Portfolio Name</label>
@@ -779,9 +791,9 @@ export default function Dashboard({ onClose }) {
                   {/* Skills lists Pill managers */}
                   <div className="md:col-span-12 border-t border-border-glass mt-6 pt-6">
                     <h4 className="font-extrabold text-sm text-text-main tracking-tight uppercase mb-4">Manage Skills Badge Arrays</h4>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      
+
                       {/* Front-End List */}
                       <div className="flex flex-col gap-3">
                         <span className="text-xs font-extrabold text-accent">FRONT-END BADGES</span>
@@ -911,7 +923,7 @@ export default function Dashboard({ onClose }) {
                         <span>•</span>
                         <span>{new Date(msg.timestamp).toLocaleString()}</span>
                       </div>
-                      
+
                       <div>
                         <h4 className="font-extrabold text-sm text-text-main leading-tight">Subject: {msg.subject}</h4>
                         <p className="text-xs text-text-muted mt-2 leading-relaxed bg-bg-base/40 p-3.5 rounded-xl border border-border-glass/30 whitespace-pre-wrap">
@@ -934,7 +946,7 @@ export default function Dashboard({ onClose }) {
             {activeTab === 'db' && (
               <div className="animate-[fadeIn_0.3s_ease] text-left">
                 <h3 className="text-xl font-extrabold text-text-main tracking-tight mb-4">Cloud Database Sync Configuration</h3>
-                
+
                 <p className="text-sm text-text-muted mb-6 leading-relaxed">
                   Enter your Google Firebase Web configuration details below. Once provided, the CMS will automatically synchronize your projects, profile documents, and contact logs to cloud storage.
                 </p>
