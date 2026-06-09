@@ -123,13 +123,14 @@ export const PortfolioProvider = ({ children }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [themeRippleTrigger, setThemeRippleTrigger] = useState(null);
 
-  // 🔴 REPLACE JUST THIS INITIALIZATION CHECK INSIDE YOUR EFFECT BLOCK:
+
   useEffect(() => {
     if (firebaseConfig && firebaseConfig.apiKey) {
       try {
         const apps = getApps();
-        // 🌟 FIXED: Correctly assign apps[0] instead of the whole array if already initialized
+
         const app = apps.length === 0 ? initializeApp(firebaseConfig) : apps[0];
+
 
         const firestoreInstance = getFirestore(app);
         const authInstance = getAuth(app);
@@ -143,16 +144,16 @@ export const PortfolioProvider = ({ children }) => {
 
         Promise.all([getDoc(bioRef), getDoc(projectsRef)])
           .then(([bioSnap, projectsSnap]) => {
-            if (bioSnap.exists() && Object.keys(bioSnap.data()).length > 1) {
+            if (bioSnap.exists() && Object.keys(bioSnap.data()).length > 0) {
               setBio(bioSnap.data());
             }
-
-            if (projectsSnap.exists() && projectsSnap.data() && projectsSnap.data().list) {
+            if (projectsSnap.exists() && projectsSnap.data() && Array.isArray(projectsSnap.data().list)) {
               setProjects(projectsSnap.data().list);
             } else {
               setProjects(SEED_PROJECTS);
             }
           })
+
           .catch((err) => {
             console.error("Firebase database fetch failure:", err);
             setErrorMsg("Failed to synchronize active database data entries.");
