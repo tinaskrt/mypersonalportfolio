@@ -7,7 +7,7 @@ const PortfolioContext = createContext();
 
 const MY_FIREBASE_CREDENTIALS = {
   apiKey: "AIzaSyDnT_-M2wCuKLF_TB-3fxgxTug11TMgC2E",
-  authDomain: "://firebaseapp.com",
+  authDomain: "my-personal-portfolio-a2b6c.firebaseapp.com",
   projectId: "my-personal-portfolio-a2b6c",
   storageBucket: "my-personal-portfolio-a2b6c.firebasestorage.app",
   messagingSenderId: "782092501017",
