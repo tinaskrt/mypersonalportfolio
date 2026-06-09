@@ -123,6 +123,7 @@ export const PortfolioProvider = ({ children }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [themeRippleTrigger, setThemeRippleTrigger] = useState(null);
 
+  // 🔴 REPLACE YOUR ENTIRE useEffect LOOP WITH THIS FIXED, CRASH-PROOF VERSION:
   useEffect(() => {
     if (firebaseConfig && firebaseConfig.apiKey) {
       try {
@@ -141,26 +142,33 @@ export const PortfolioProvider = ({ children }) => {
 
         Promise.all([getDoc(bioRef), getDoc(projectsRef)])
           .then(([bioSnap, projectsSnap]) => {
-            if (bioSnap.exists() && bioSnap.data() && Object.keys(bioSnap.data()).length > 1) {
+            // 🌟 Self-Heals and validates the Bio object structure to prevent '.email' crashes
+            if (bioSnap.exists() && bioSnap.data() && bioSnap.data().contact && bioSnap.data().contact.email) {
               setBio(bioSnap.data());
             } else {
+              // If the cloud document is broken or empty, load defaults and actively re-initialize it
               setBio(DEFAULT_BIO);
+              setDoc(bioRef, DEFAULT_BIO, { merge: true }).catch(console.error);
             }
+
+            // 🌟 Validates the Projects list structure
             if (projectsSnap.exists() && projectsSnap.data() && Array.isArray(projectsSnap.data().list)) {
               setProjects(projectsSnap.data().list);
             } else {
+              // If cloud projects are empty, load seed elements and initialize them
               setProjects(SEED_PROJECTS);
+              setDoc(projectsRef, { list: SEED_PROJECTS }, { merge: true }).catch(console.error);
             }
           })
           .catch((err) => {
-            console.error("Firebase data load failure, running fallback safely:", err);
+            console.error("Firebase fetch bypassed safely:", err);
             setBio(DEFAULT_BIO);
             setProjects(SEED_PROJECTS);
           })
           .finally(() => setLoading(false));
 
       } catch (err) {
-        console.error("Firebase dynamic engine setup failure:", err);
+        console.error("Firebase configuration failure:", err);
         setIsFirebaseConnected(false);
         setBio(DEFAULT_BIO);
         setProjects(SEED_PROJECTS);
@@ -170,6 +178,7 @@ export const PortfolioProvider = ({ children }) => {
       setProjects(SEED_PROJECTS);
     }
   }, [firebaseConfig]);
+
 
   const toggleTheme = (e) => {
     if (e && e.clientX && e.clientY) {
