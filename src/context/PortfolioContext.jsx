@@ -184,7 +184,10 @@ export const PortfolioProvider = ({ children }) => {
     if (e && e.clientX && e.clientY) {
       setThemeRippleTrigger({ x: e.clientX, y: e.clientY });
     }
-    const nextTheme = theme === 'blush-bloom' ? 'theme-midnight-rose' : 'blush-bloom';
+    const nextTheme =
+      theme === 'blush-bloom'
+        ? 'midnight-rose'
+        : 'blush-bloom';
     setTheme(nextTheme);
     localStorage.setItem('maria-portfolio-theme', nextTheme);
   };
@@ -270,21 +273,30 @@ export const PortfolioProvider = ({ children }) => {
     <PortfolioContext.Provider value={{
       theme,
       toggleTheme,
+
       bio,
       updateBio,
+
       projects,
       addProject,
       editProject,
       deleteProject,
+      saveProjectsList,
+
+      firebaseConfig,
+      saveCloudConfig,
+
       activeSection,
       setActiveSection,
+
       isAdmin,
       loginAdmin,
       logoutAdmin,
+
       isFirebaseConnected,
-      saveCloudConfig,
       loading,
       errorMsg,
+
       themeRippleTrigger,
       setThemeRippleTrigger
     }}>

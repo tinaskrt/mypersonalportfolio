@@ -7,13 +7,19 @@ export default function Dashboard({ onClose }) {
     isAdmin,
     loginAdmin,
     logoutAdmin,
+
     bio,
     updateBio,
+
     projects,
     addProject,
     editProject,
     deleteProject,
+    saveProjectsList,
+
+    firebaseConfig,
     saveCloudConfig,
+
     isFirebaseConnected,
     errorMsg
   } = usePortfolio();
