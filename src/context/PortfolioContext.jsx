@@ -7,7 +7,7 @@ const PortfolioContext = createContext();
 
 const MY_FIREBASE_CREDENTIALS = {
   apiKey: "AIzaSyDnT_-M2wCuKLF_TB-3fxgxTug11TMgC2E",
-  authDomain: "my-personal-portfolio-a2b6c.firebaseapp.com",
+  authDomain: "://firebaseapp.com",
   projectId: "my-personal-portfolio-a2b6c",
   storageBucket: "my-personal-portfolio-a2b6c.firebasestorage.app",
   messagingSenderId: "782092501017",
@@ -123,13 +123,10 @@ export const PortfolioProvider = ({ children }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [themeRippleTrigger, setThemeRippleTrigger] = useState(null);
 
-
-  // 🔴 REPLACE YOUR ENTIRE useEffect LOOP WITH THIS BLOCK:
   useEffect(() => {
     if (firebaseConfig && firebaseConfig.apiKey) {
       try {
         const apps = getApps();
-        // Secure instance extractor prevents duplicate instantiation crashes
         const app = apps.length === 0 ? initializeApp(firebaseConfig) : apps[0];
 
         const firestoreInstance = getFirestore(app);
@@ -144,14 +141,11 @@ export const PortfolioProvider = ({ children }) => {
 
         Promise.all([getDoc(bioRef), getDoc(projectsRef)])
           .then(([bioSnap, projectsSnap]) => {
-            // 🌟 Crash-proof Check: Ensure data is not null/empty before changing state
-            if (bioSnap.exists() && bioSnap.data() && Object.keys(bioSnap.data()).length > 0) {
+            if (bioSnap.exists() && bioSnap.data() && Object.keys(bioSnap.data()).length > 1) {
               setBio(bioSnap.data());
             } else {
               setBio(DEFAULT_BIO);
             }
-
-            // 🌟 Crash-proof Check: Ensure list is a real array before setting projects
             if (projectsSnap.exists() && projectsSnap.data() && Array.isArray(projectsSnap.data().list)) {
               setProjects(projectsSnap.data().list);
             } else {
@@ -159,27 +153,23 @@ export const PortfolioProvider = ({ children }) => {
             }
           })
           .catch((err) => {
-            console.error("Firebase network fetch bypassed safely:", err);
-            // Fallback gracefully on empty databases instead of going blank
+            console.error("Firebase data load failure, running fallback safely:", err);
             setBio(DEFAULT_BIO);
             setProjects(SEED_PROJECTS);
           })
           .finally(() => setLoading(false));
 
       } catch (err) {
-        console.error("Firebase initial structure construction failure:", err);
+        console.error("Firebase dynamic engine setup failure:", err);
         setIsFirebaseConnected(false);
         setBio(DEFAULT_BIO);
         setProjects(SEED_PROJECTS);
       }
     } else {
-      // If config is missing entirely, show default screen data cleanly
       setBio(DEFAULT_BIO);
       setProjects(SEED_PROJECTS);
     }
   }, [firebaseConfig]);
-
-
 
   const toggleTheme = (e) => {
     if (e && e.clientX && e.clientY) {
@@ -196,10 +186,10 @@ export const PortfolioProvider = ({ children }) => {
 
     if (isFirebaseConnected && db) {
       try {
-        await setDoc(doc(db, 'portfolio', 'bio'), newBioData);
+        await setDoc(doc(db, 'portfolio', 'bio'), newBioData, { merge: true });
       } catch (err) {
-        console.error("Cloud document profile save execution failure:", err);
-        throw new Error("Could not update information structure changes in cloud storage.");
+        console.error("Cloud profile write request rejected:", err);
+        throw new Error("Could not preserve updated layout state data entries.");
       }
     }
   };
@@ -210,10 +200,10 @@ export const PortfolioProvider = ({ children }) => {
 
     if (isFirebaseConnected && db) {
       try {
-        await setDoc(doc(db, 'portfolio', 'projects'), { list: updatedList });
+        await setDoc(doc(db, 'portfolio', 'projects'), { list: [...updatedList] }, { merge: true });
       } catch (err) {
-        console.error("Cloud array persistence transaction failure:", err);
-        throw new Error("Target project registry list mapping rejected by host.");
+        console.error("Cloud array registry structural commit rejected:", err);
+        throw new Error("Target modifications rejected by cloud datastore.");
       }
     }
   };
@@ -245,7 +235,7 @@ export const PortfolioProvider = ({ children }) => {
       localStorage.setItem('maria-portfolio-is-admin', 'true');
       return true;
     }
-    throw new Error("Provided administrator authentication entry password rejected.");
+    throw new Error("Admin connection validation key sequence invalid.");
   };
 
   const logoutAdmin = () => {
@@ -283,6 +273,6 @@ export const PortfolioProvider = ({ children }) => {
 
 export const usePortfolio = () => {
   const context = useContext(PortfolioContext);
-  if (!context) throw new Error("usePortfolio must be wrapped natively by a PortfolioProvider context container.");
+  if (!context) throw new Error("usePortfolio context exception thrown outside active scope framework runtime mapping.");
   return context;
 };
